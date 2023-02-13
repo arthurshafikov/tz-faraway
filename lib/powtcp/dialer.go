@@ -2,10 +2,8 @@ package powtcp
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"fmt"
 	"math"
-	"math/big"
 	"net"
 	"strconv"
 	"time"
@@ -60,7 +58,7 @@ func (cd ConnDialer) Dial(network, addr string) (net.Conn, error) {
 		return nil, fmt.Errorf("wrong difficulty came from host: %s", string(dataWithDifficulty[1]))
 	}
 
-	nonce := findNonce(dataWithDifficulty[0], difficulty)
+	nonce := cd.findNonce(dataWithDifficulty[0], difficulty)
 	if err := cd.SetWriteDeadline(); err != nil {
 		return nil, err
 	}
@@ -91,17 +89,9 @@ func (cd *ConnDialer) SetWriteDeadline() error {
 	return setWriteDeadline(cd.conn, cd.writeTimeoutDuration)
 }
 
-func findNonce(data []byte, difficulty int) int {
-	target := big.NewInt(1)
-	target.Lsh(target, uint(256-difficulty))
-
-	var hash [32]byte
-	var intHash big.Int
+func (cd *ConnDialer) findNonce(data []byte, difficulty int) int {
 	for nonce := 0; nonce < math.MaxInt64; nonce++ {
-		hash = sha256.Sum256(bytes.Join([][]byte{data, []byte(fmt.Sprintf("%v", nonce))}, []byte{}))
-
-		intHash.SetBytes(hash[:])
-		if intHash.Cmp(target) == -1 {
+		if checkNonceIsValid(difficulty, data, nonce) {
 			return nonce
 		}
 	}

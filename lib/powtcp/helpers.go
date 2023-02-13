@@ -1,9 +1,12 @@
 package powtcp
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"log"
+	"math/big"
 	"math/rand"
 	"net"
 	"time"
@@ -67,4 +70,14 @@ func randomString(length int) string {
 	}
 
 	return string(b)
+}
+
+func checkNonceIsValid(difficulty int, data []byte, nonce int) bool {
+	hash := sha256.Sum256(bytes.Join([][]byte{data, []byte(fmt.Sprintf("%v", nonce))}, []byte{}))
+
+	target := big.NewInt(1)
+	target.Lsh(target, uint(256-difficulty))
+
+	var intHash big.Int
+	return intHash.SetBytes(hash[:]).Cmp(target) == -1
 }

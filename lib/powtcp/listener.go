@@ -1,11 +1,8 @@
 package powtcp
 
 import (
-	"bytes"
-	"crypto/sha256"
 	"fmt"
 	"log"
-	"math/big"
 	"net"
 	"strconv"
 	"time"
@@ -94,7 +91,7 @@ func (l *ProowOfWorkProtectionListener) Accept() (net.Conn, error) {
 		return conn, nil
 	}
 
-	if !l.checkNonceIsValid(l.POWDifficulty, []byte(randomString), nonce) {
+	if !checkNonceIsValid(l.POWDifficulty, []byte(randomString), nonce) {
 		if err := l.writeTextToConn(conn, "nonce is not valid"); err != nil {
 			log.Println(err)
 		}
@@ -124,13 +121,3 @@ func (l *ProowOfWorkProtectionListener) writeTextToConn(conn net.Conn, text stri
 func (l *ProowOfWorkProtectionListener) Close() error { return l.TCPListener.Close() }
 
 func (l *ProowOfWorkProtectionListener) Addr() net.Addr { return l.TCPListener.Addr() }
-
-func (l *ProowOfWorkProtectionListener) checkNonceIsValid(difficulty int, data []byte, nonce int) bool {
-	hash := sha256.Sum256(bytes.Join([][]byte{data, []byte(fmt.Sprintf("%v", nonce))}, []byte{}))
-
-	target := big.NewInt(1)
-	target.Lsh(target, uint(256-difficulty))
-
-	var intHash big.Int
-	return intHash.SetBytes(hash[:]).Cmp(target) == -1
-}
