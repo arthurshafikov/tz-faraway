@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	OKResult = "OK"
-	charset  = "abcdefghijklmnopqrstuvwxyz" +
+	OKResult                         = "OK"
+	charsetForRandomStringGeneration = "abcdefghijklmnopqrstuvwxyz" +
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 )
 
@@ -43,11 +43,11 @@ func closeConnection(conn net.Conn) {
 }
 
 func randomString(length int) string {
-	rand.Seed(time.Now().Unix() + 123123)
+	rand.Seed(time.Now().UnixNano())
 
 	b := make([]byte, length)
 	for i := range b {
-		b[i] = charset[rand.Intn(len(charset))]
+		b[i] = charsetForRandomStringGeneration[rand.Intn(len(charsetForRandomStringGeneration))]
 	}
 
 	return string(b)
