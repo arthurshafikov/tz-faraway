@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-	"io"
 	"log"
 	"math/big"
 	"net"
 	"strconv"
+	"time"
 )
 
 const (
@@ -20,15 +20,20 @@ type ProowOfWorkProtectionListener struct {
 	TCPListener net.Listener
 
 	POWDifficulty int
+
+	readTimeoutDuration  time.Duration
+	writeTimeoutDuration time.Duration
 }
 
-// required - Address, optional - Difficulty (Default: 15)
-type Options struct {
-	Address    string
-	Difficulty int
+// required - Address, optional - Difficulty (Default: 15), ReadTimeoutDuration, WriteTimeoutDuration
+type ListenerOptions struct {
+	Address              string
+	Difficulty           int
+	ReadTimeoutDuration  time.Duration
+	WriteTimeoutDuration time.Duration
 }
 
-func NewProowOfWorkProtectionListener(opts Options) (*ProowOfWorkProtectionListener, error) {
+func NewProowOfWorkProtectionListener(opts ListenerOptions) (*ProowOfWorkProtectionListener, error) {
 	if opts.Address == "" {
 		return nil, fmt.Errorf("empty address for custom listener")
 	}
@@ -44,8 +49,10 @@ func NewProowOfWorkProtectionListener(opts Options) (*ProowOfWorkProtectionListe
 	}
 
 	return &ProowOfWorkProtectionListener{
-		TCPListener:   tcpListener,
-		POWDifficulty: opts.Difficulty,
+		TCPListener:          tcpListener,
+		POWDifficulty:        opts.Difficulty,
+		readTimeoutDuration:  opts.ReadTimeoutDuration,
+		writeTimeoutDuration: opts.WriteTimeoutDuration,
 	}, nil
 }
 
@@ -59,25 +66,27 @@ func (l *ProowOfWorkProtectionListener) Accept() (net.Conn, error) {
 	}
 
 	randomString := randomString(randomStringLength)
-	if _, err := writeToConnection(conn, []byte(randomString+":"+fmt.Sprintf("%v", l.POWDifficulty))); err != nil {
+	if err := l.writeTextToConn(conn, fmt.Sprintf("%s:%v", randomString, l.POWDifficulty)); err != nil {
 		log.Println(err)
 		closeConnection(conn)
 
 		return conn, nil
 	}
 
-	buffer := make([]byte, 300)
-	n, err := conn.Read(buffer)
+	if err := setReadDeadline(conn, l.readTimeoutDuration); err != nil {
+		return nil, err
+	}
+	res, err := readFromConnection(conn, 300)
 	if err != nil {
-		if err != io.EOF {
-			log.Println(fmt.Errorf("ProowOfWorkProtectionListener.Accept() read error: %w", err))
-		}
+		log.Println(err)
+		closeConnection(conn)
+
+		return conn, nil
 	}
 
-	nonce, err := strconv.Atoi(string(buffer[:n]))
+	nonce, err := strconv.Atoi(string(res))
 	if err != nil {
-		log.Println("nonce is not numeric value")
-		if _, err := writeToConnection(conn, []byte("nonce is not numeric value")); err != nil {
+		if err := l.writeTextToConn(conn, "nonce is not numeric value"); err != nil {
 			log.Println(err)
 		}
 		closeConnection(conn)
@@ -86,8 +95,7 @@ func (l *ProowOfWorkProtectionListener) Accept() (net.Conn, error) {
 	}
 
 	if !l.checkNonceIsValid(l.POWDifficulty, []byte(randomString), nonce) {
-		log.Println("nonce is not valid")
-		if _, err := writeToConnection(conn, []byte("nonce is not valid")); err != nil {
+		if err := l.writeTextToConn(conn, "nonce is not valid"); err != nil {
 			log.Println(err)
 		}
 		closeConnection(conn)
@@ -95,12 +103,22 @@ func (l *ProowOfWorkProtectionListener) Accept() (net.Conn, error) {
 		return conn, nil
 	}
 
-	if _, err := writeToConnection(conn, []byte(OKResult)); err != nil {
+	if err := l.writeTextToConn(conn, OKResult); err != nil {
 		log.Println(err)
+
 		closeConnection(conn)
 	}
 
 	return conn, nil
+}
+
+func (l *ProowOfWorkProtectionListener) writeTextToConn(conn net.Conn, text string) error {
+	if err := setWriteDeadline(conn, l.writeTimeoutDuration); err != nil {
+		return err
+	}
+	_, err := writeToConnection(conn, []byte(text))
+
+	return err
 }
 
 func (l *ProowOfWorkProtectionListener) Close() error { return l.TCPListener.Close() }

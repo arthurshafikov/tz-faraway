@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/arthurshafikov/tz-faraway/lib/powtcp"
 )
@@ -11,8 +12,10 @@ import (
 func RunServer(handler http.Handler, port string) {
 	log.Println("Starting the server on port " + port)
 
-	proowOfWorkProtectionListener, err := powtcp.NewProowOfWorkProtectionListener(powtcp.Options{
-		Address: ":" + port,
+	proowOfWorkProtectionListener, err := powtcp.NewProowOfWorkProtectionListener(powtcp.ListenerOptions{
+		Address:              ":" + port,
+		ReadTimeoutDuration:  time.Second * 5,
+		WriteTimeoutDuration: time.Second * 5,
 	})
 	if err != nil {
 		log.Fatalln(err)

@@ -84,19 +84,11 @@ func (cd ConnDialer) Dial(network, addr string) (net.Conn, error) {
 }
 
 func (cd *ConnDialer) SetReadDeadline() error {
-	if cd.readTimeoutDuration.Nanoseconds() != 0 {
-		return cd.conn.SetReadDeadline(time.Now().Add(cd.readTimeoutDuration))
-	}
-
-	return nil
+	return setReadDeadline(cd.conn, cd.readTimeoutDuration)
 }
 
 func (cd *ConnDialer) SetWriteDeadline() error {
-	if cd.writeTimeoutDuration.Nanoseconds() != 0 {
-		return cd.conn.SetWriteDeadline(time.Now().Add(cd.writeTimeoutDuration))
-	}
-
-	return nil
+	return setWriteDeadline(cd.conn, cd.writeTimeoutDuration)
 }
 
 func findNonce(data []byte, difficulty int) int {

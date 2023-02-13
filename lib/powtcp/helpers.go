@@ -42,6 +42,22 @@ func closeConnection(conn net.Conn) {
 	}
 }
 
+func setWriteDeadline(conn net.Conn, duration time.Duration) error {
+	if duration.Nanoseconds() != 0 {
+		return conn.SetWriteDeadline(time.Now().Add(duration))
+	}
+
+	return nil
+}
+
+func setReadDeadline(conn net.Conn, duration time.Duration) error {
+	if duration.Nanoseconds() != 0 {
+		return conn.SetReadDeadline(time.Now().Add(duration))
+	}
+
+	return nil
+}
+
 func randomString(length int) string {
 	rand.Seed(time.Now().UnixNano())
 
