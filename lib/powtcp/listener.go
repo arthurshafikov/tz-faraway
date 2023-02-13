@@ -7,10 +7,8 @@ import (
 	"io"
 	"log"
 	"math/big"
-	"math/rand"
 	"net"
 	"strconv"
-	"time"
 )
 
 const (
@@ -53,15 +51,15 @@ func (l *ProowOfWorkProtectionListener) Accept() (net.Conn, error) {
 	conn, err := l.TCPListener.Accept()
 	if err != nil {
 		log.Println(fmt.Errorf("ProowOfWorkProtectionListener.Accept() error: %w", err))
-		l.CloseConnection(conn)
+		closeConnection(conn)
 
 		return conn, nil
 	}
 
 	randomString := randomString(randomStringLength)
-	if _, err := l.WriteToConnection(conn, []byte(randomString+":"+fmt.Sprintf("%v", l.POWDifficulty))); err != nil {
+	if _, err := writeToConnection(conn, []byte(randomString+":"+fmt.Sprintf("%v", l.POWDifficulty))); err != nil {
 		log.Println(err)
-		l.CloseConnection(conn)
+		closeConnection(conn)
 
 		return conn, nil
 	}
@@ -77,52 +75,37 @@ func (l *ProowOfWorkProtectionListener) Accept() (net.Conn, error) {
 	nonce, err := strconv.Atoi(string(buffer[:n]))
 	if err != nil {
 		log.Println("nonce is not numeric value")
-		if _, err := l.WriteToConnection(conn, []byte("nonce is not numeric value")); err != nil {
+		if _, err := writeToConnection(conn, []byte("nonce is not numeric value")); err != nil {
 			log.Println(err)
 		}
-		l.CloseConnection(conn)
+		closeConnection(conn)
 
 		return conn, nil
 	}
 
-	if !checkNonceIsValid(l.POWDifficulty, []byte(randomString), nonce) {
+	if !l.checkNonceIsValid(l.POWDifficulty, []byte(randomString), nonce) {
 		log.Println("nonce is not valid")
-		if _, err := l.WriteToConnection(conn, []byte("nonce is not valid")); err != nil {
+		if _, err := writeToConnection(conn, []byte("nonce is not valid")); err != nil {
 			log.Println(err)
 		}
-		l.CloseConnection(conn)
+		closeConnection(conn)
 
 		return conn, nil
 	}
 
-	if _, err := l.WriteToConnection(conn, []byte(OKResult)); err != nil {
+	if _, err := writeToConnection(conn, []byte(OKResult)); err != nil {
 		log.Println(err)
-		l.CloseConnection(conn)
+		closeConnection(conn)
 	}
 
 	return conn, nil
-}
-
-func (l *ProowOfWorkProtectionListener) CloseConnection(conn net.Conn) {
-	if err := conn.Close(); err != nil {
-		log.Println(fmt.Errorf("CloseConnection() error: %w", err))
-	}
-}
-
-func (l *ProowOfWorkProtectionListener) WriteToConnection(conn net.Conn, data []byte) (int, error) {
-	n, err := conn.Write(data)
-	if err != nil {
-		return 0, fmt.Errorf("write to client error: %w", err)
-	}
-
-	return n, nil
 }
 
 func (l *ProowOfWorkProtectionListener) Close() error { return l.TCPListener.Close() }
 
 func (l *ProowOfWorkProtectionListener) Addr() net.Addr { return l.TCPListener.Addr() }
 
-func checkNonceIsValid(difficulty int, data []byte, nonce int) bool {
+func (l *ProowOfWorkProtectionListener) checkNonceIsValid(difficulty int, data []byte, nonce int) bool {
 	hash := sha256.Sum256(bytes.Join([][]byte{data, []byte(fmt.Sprintf("%v", nonce))}, []byte{}))
 
 	target := big.NewInt(1)
@@ -130,18 +113,4 @@ func checkNonceIsValid(difficulty int, data []byte, nonce int) bool {
 
 	var intHash big.Int
 	return intHash.SetBytes(hash[:]).Cmp(target) == -1
-}
-
-const charset = "abcdefghijklmnopqrstuvwxyz" +
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-func randomString(length int) string {
-	rand.Seed(time.Now().Unix())
-
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = charset[rand.Intn(len(charset))]
-	}
-
-	return string(b)
 }

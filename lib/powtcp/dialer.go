@@ -4,17 +4,14 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-	"io"
 	"math"
 	"math/big"
 	"net"
 	"strconv"
 )
 
-const OKResult = "OK"
-
 type ConnDialer struct {
-	c net.Conn
+	conn net.Conn
 }
 
 func NewConnDialer(address string) (*ConnDialer, error) {
@@ -24,52 +21,45 @@ func NewConnDialer(address string) (*ConnDialer, error) {
 	}
 
 	return &ConnDialer{
-		c: conn,
+		conn: conn,
 	}, nil
 }
 
 func (cd ConnDialer) CloseConnection() error {
-	return cd.c.Close()
+	return cd.conn.Close()
 }
 
 func (cd ConnDialer) Dial(network, addr string) (net.Conn, error) {
-	buffer := make([]byte, 300)
-	n, err := cd.c.Read(buffer)
+	result, err := readFromConnection(cd.conn, randomStringLength+4) // randomStringLength:256
 	if err != nil {
-		if err != io.EOF {
-			return nil, fmt.Errorf("accept() read error: %w", err)
-		}
+		return nil, err
 	}
 
-	dataWithDifficulty := bytes.Split(buffer[:n], []byte(":"))
+	dataWithDifficulty := bytes.Split(result, []byte(":"))
 	if len(dataWithDifficulty) != 2 {
-		return nil, fmt.Errorf("wrong data with difficulty came from host: %s", string(buffer[:n]))
+		return nil, fmt.Errorf("wrong data with difficulty came from host: %s", string(result))
 	}
 
-	data := dataWithDifficulty[0]
 	difficulty, err := strconv.Atoi(string(dataWithDifficulty[1]))
 	if err != nil || difficulty < 1 {
 		return nil, fmt.Errorf("wrong difficulty came from host: %s", string(dataWithDifficulty[1]))
 	}
 
-	nonce := findNonce(data, difficulty)
-	if _, err := cd.c.Write([]byte(fmt.Sprintf("%v", nonce))); err != nil {
-		return nil, fmt.Errorf("connection write error: %w", err)
+	nonce := findNonce(dataWithDifficulty[0], difficulty)
+	if _, err := writeToConnection(cd.conn, []byte(fmt.Sprintf("%v", nonce))); err != nil {
+		return nil, err
 	}
 
-	buffer = make([]byte, 300)
-	n, err = cd.c.Read(buffer)
+	result, err = readFromConnection(cd.conn, 300)
 	if err != nil {
-		if err != io.EOF {
-			return nil, fmt.Errorf("accept() read error: %w", err)
-		}
+		return nil, err
 	}
 
-	if string(buffer[:n]) != OKResult {
-		return nil, fmt.Errorf("host responded: %s", string(buffer[:n]))
+	if string(result) != OKResult {
+		return nil, fmt.Errorf("host responded: %s", string(result))
 	}
 
-	return cd.c, nil
+	return cd.conn, nil
 }
 
 func findNonce(data []byte, difficulty int) int {
@@ -83,9 +73,6 @@ func findNonce(data []byte, difficulty int) int {
 
 		intHash.SetBytes(hash[:])
 		if intHash.Cmp(target) == -1 {
-			fmt.Printf("Nonce = %v\n", nonce)
-			fmt.Printf("Result = %s\n", intHash.String())
-			fmt.Printf("Target = %s\n", target.String())
 			return nonce
 		}
 	}
