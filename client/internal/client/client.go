@@ -37,5 +37,5 @@ func MakeQuery() {
 	}
 	defer res.Body.Close()
 
-	fmt.Printf("%s %s\n", res.Status, string(bodyRes))
+	fmt.Printf("%s %s", res.Status, string(bodyRes))
 }
