@@ -9,14 +9,14 @@ import (
 )
 
 const (
-	randomStringLength = 20
-	defaultDifficulty  = 15
+	randomStringLength       = 20
+	defaultDifficulty  uint8 = 15
 )
 
 type ProowOfWorkProtectionListener struct {
-	TCPListener net.Listener
+	tcpListener net.Listener
 
-	POWDifficulty uint8
+	powDifficulty uint8
 
 	readTimeoutDuration  time.Duration
 	writeTimeoutDuration time.Duration
@@ -44,15 +44,15 @@ func NewProowOfWorkProtectionListener(opts ListenerOptions) (*ProowOfWorkProtect
 	}
 
 	return &ProowOfWorkProtectionListener{
-		TCPListener:          tcpListener,
-		POWDifficulty:        opts.Difficulty,
+		tcpListener:          tcpListener,
+		powDifficulty:        opts.Difficulty,
 		readTimeoutDuration:  opts.ReadTimeoutDuration,
 		writeTimeoutDuration: opts.WriteTimeoutDuration,
 	}, nil
 }
 
 func (l *ProowOfWorkProtectionListener) Accept() (net.Conn, error) {
-	conn, err := l.TCPListener.Accept()
+	conn, err := l.tcpListener.Accept()
 	if err != nil {
 		log.Println(fmt.Errorf("ProowOfWorkProtectionListener.Accept() error: %w", err))
 		closeConnection(conn)
@@ -61,7 +61,7 @@ func (l *ProowOfWorkProtectionListener) Accept() (net.Conn, error) {
 	}
 
 	randomString := randomString(randomStringLength)
-	if err := l.writeTextToConn(conn, fmt.Sprintf("%s:%v", randomString, l.POWDifficulty)); err != nil {
+	if err := l.writeTextToConn(conn, fmt.Sprintf("%s:%v", randomString, l.powDifficulty)); err != nil {
 		log.Println(err)
 		closeConnection(conn)
 
@@ -89,7 +89,7 @@ func (l *ProowOfWorkProtectionListener) Accept() (net.Conn, error) {
 		return conn, nil
 	}
 
-	if !checkNonceIsValid(l.POWDifficulty, []byte(randomString), nonce) {
+	if !checkNonceIsValid(l.powDifficulty, []byte(randomString), nonce) {
 		if err := l.writeTextToConn(conn, "nonce is not valid"); err != nil {
 			log.Println(err)
 		}
@@ -116,6 +116,6 @@ func (l *ProowOfWorkProtectionListener) writeTextToConn(conn net.Conn, text stri
 	return err
 }
 
-func (l *ProowOfWorkProtectionListener) Close() error { return l.TCPListener.Close() }
+func (l *ProowOfWorkProtectionListener) Close() error { return l.tcpListener.Close() }
 
-func (l *ProowOfWorkProtectionListener) Addr() net.Addr { return l.TCPListener.Addr() }
+func (l *ProowOfWorkProtectionListener) Addr() net.Addr { return l.tcpListener.Addr() }
