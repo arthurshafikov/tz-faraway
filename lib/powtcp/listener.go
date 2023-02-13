@@ -95,7 +95,12 @@ func (l *ProowOfWorkProtectionListener) Accept() (net.Conn, error) {
 		return conn, nil
 	}
 
-	return conn, err
+	if _, err := l.WriteToConnection(conn, []byte(OKResult)); err != nil {
+		log.Println(err)
+		l.CloseConnection(conn)
+	}
+
+	return conn, nil
 }
 
 func (l *ProowOfWorkProtectionListener) CloseConnection(conn net.Conn) {

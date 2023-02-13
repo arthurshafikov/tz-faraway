@@ -11,6 +11,8 @@ import (
 	"strconv"
 )
 
+const OKResult = "OK"
+
 type ConnDialer struct {
 	c net.Conn
 }
@@ -53,6 +55,18 @@ func (cd ConnDialer) Dial(network, addr string) (net.Conn, error) {
 	nonce := findNonce(data, difficulty)
 	if _, err := cd.c.Write([]byte(fmt.Sprintf("%v", nonce))); err != nil {
 		return nil, fmt.Errorf("connection write error: %w", err)
+	}
+
+	buffer = make([]byte, 300)
+	n, err = cd.c.Read(buffer)
+	if err != nil {
+		if err != io.EOF {
+			return nil, fmt.Errorf("accept() read error: %w", err)
+		}
+	}
+
+	if string(buffer[:n]) != OKResult {
+		return nil, fmt.Errorf("host responded: %s", string(buffer[:n]))
 	}
 
 	return cd.c, nil
