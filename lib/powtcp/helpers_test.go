@@ -1,7 +1,9 @@
 package powtcp
 
 import (
+	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"regexp"
@@ -148,6 +150,28 @@ func TestCloseConnection(t *testing.T) {
 	require.Equal(t, "", logOutput)
 }
 
+type fakeConn struct{}
+
+func (f fakeConn) Close() error {
+	return fmt.Errorf("some close error!")
+}
+
+func (f fakeConn) Read(b []byte) (n int, err error)   { panic("not implemented") }
+func (f fakeConn) Write(b []byte) (n int, err error)  { panic("not implemented") }
+func (f fakeConn) LocalAddr() net.Addr                { panic("not implemented") }
+func (f fakeConn) RemoteAddr() net.Addr               { panic("not implemented") }
+func (f fakeConn) SetDeadline(t time.Time) error      { panic("not implemented") }
+func (f fakeConn) SetReadDeadline(t time.Time) error  { panic("not implemented") }
+func (f fakeConn) SetWriteDeadline(t time.Time) error { panic("not implemented") }
+
+func TestCloseConnectionReturnsError(t *testing.T) {
+	logOutput := wrapLogOutput(t, func() {
+		closeConnection(fakeConn{})
+	})
+
+	require.Contains(t, logOutput, "closeConnection error: some close error!")
+}
+
 func TestRandomString(t *testing.T) {
 	randomString := randomString(200)
 
@@ -159,17 +183,15 @@ func TestRandomString(t *testing.T) {
 func wrapLogOutput(t *testing.T, callback func()) string {
 	t.Helper()
 
-	rescueStdout := os.Stdout
 	reader, writer, err := os.Pipe()
 	require.NoError(t, err)
-	os.Stdout = writer
+	log.SetOutput(writer)
 
 	callback()
 
 	writer.Close()
 	out, err := ioutil.ReadAll(reader)
 	require.NoError(t, err)
-	os.Stdout = rescueStdout
 
 	return string(out)
 }
