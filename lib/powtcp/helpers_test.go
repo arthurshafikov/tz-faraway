@@ -1,7 +1,6 @@
 package powtcp
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
@@ -11,6 +10,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/arthurshafikov/tz-faraway/lib/powtcp/mocks"
 )
 
 func TestReadFromConnection(t *testing.T) {
@@ -150,26 +151,12 @@ func TestCloseConnection(t *testing.T) {
 	require.Equal(t, "", logOutput)
 }
 
-type fakeConn struct{}
-
-func (f fakeConn) Close() error {
-	return fmt.Errorf("some close error!")
-}
-
-func (f fakeConn) Read(b []byte) (n int, err error)   { panic("not implemented") }
-func (f fakeConn) Write(b []byte) (n int, err error)  { panic("not implemented") }
-func (f fakeConn) LocalAddr() net.Addr                { panic("not implemented") }
-func (f fakeConn) RemoteAddr() net.Addr               { panic("not implemented") }
-func (f fakeConn) SetDeadline(t time.Time) error      { panic("not implemented") }
-func (f fakeConn) SetReadDeadline(t time.Time) error  { panic("not implemented") }
-func (f fakeConn) SetWriteDeadline(t time.Time) error { panic("not implemented") }
-
 func TestCloseConnectionReturnsError(t *testing.T) {
 	logOutput := wrapLogOutput(t, func() {
-		closeConnection(fakeConn{})
+		closeConnection(mocks.FakeConn{})
 	})
 
-	require.Contains(t, logOutput, "closeConnection error: some close error!")
+	require.Contains(t, logOutput, "closeConnection error: some close error")
 }
 
 func TestRandomString(t *testing.T) {
