@@ -3,6 +3,7 @@ package powtcp
 import (
 	"bytes"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -22,7 +23,7 @@ func readFromConnection(conn net.Conn, bufferSize int) ([]byte, error) {
 	buffer := make([]byte, bufferSize)
 	n, err := conn.Read(buffer)
 	if err != nil {
-		if err != io.EOF {
+		if !errors.Is(err, io.EOF) {
 			return nil, fmt.Errorf("readFromConnection error: %w", err)
 		}
 	}

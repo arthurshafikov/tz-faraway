@@ -22,7 +22,7 @@ type ProowOfWorkProtectionListener struct {
 	writeTimeoutDuration time.Duration
 }
 
-// required - Address, optional - Difficulty (Default: 15), ReadTimeoutDuration, WriteTimeoutDuration
+// required - Address, optional - Difficulty (Default: 15), ReadTimeoutDuration, WriteTimeoutDuration.
 type ListenerOptions struct {
 	Address              string
 	Difficulty           uint8
