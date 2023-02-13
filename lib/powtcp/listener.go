@@ -34,6 +34,8 @@ func NewProowOfWorkProtectionListener(opts Options) (*ProowOfWorkProtectionListe
 	}
 	if opts.Difficulty == 0 {
 		opts.Difficulty = defaultDifficulty
+	} else if opts.Difficulty > 256 || opts.Difficulty < 1 {
+		return nil, fmt.Errorf("difficulty can be from 1 to 256")
 	}
 
 	tcpListener, err := net.Listen("tcp", opts.Address)
