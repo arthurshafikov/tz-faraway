@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -10,11 +11,11 @@ import (
 	"github.com/arthurshafikov/tz-faraway/lib/powtcp"
 )
 
-func MakeQuery() {
+func MakeQuery(ctx context.Context) error {
 	address := "localhost:3333"
-	req, err := http.NewRequest(http.MethodGet, "http://"+address, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://"+address, nil)
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	connDialer, err := powtcp.NewConnDialer(powtcp.ConnDialerOptions{
@@ -23,24 +24,26 @@ func MakeQuery() {
 		WriteTimeoutDuration: time.Second * 5,
 	})
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 	defer func() {
 		if err := connDialer.CloseConnection(); err != nil {
-			log.Fatalln(err)
+			log.Println(err)
 		}
 	}()
 	client := http.Client{Transport: &http.Transport{Dial: connDialer.Dial}}
 	res, err := client.Do(req)
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	bodyRes, err := io.ReadAll(res.Body)
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 	defer res.Body.Close()
 
 	fmt.Printf("%s %s", res.Status, string(bodyRes))
+
+	return nil
 }
