@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/arthurshafikov/tz-faraway/lib/powtcp"
 )
@@ -16,7 +17,11 @@ func MakeQuery() {
 		log.Fatalln(err)
 	}
 
-	connDialer, err := powtcp.NewConnDialer(address)
+	connDialer, err := powtcp.NewConnDialer(powtcp.ConnDialerOptions{
+		Address:              address,
+		ReadTimeoutDuration:  time.Second * 5,
+		WriteTimeoutDuration: time.Second * 5,
+	})
 	if err != nil {
 		log.Fatalln(err)
 	}
