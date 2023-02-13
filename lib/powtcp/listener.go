@@ -16,7 +16,7 @@ const (
 type ProowOfWorkProtectionListener struct {
 	TCPListener net.Listener
 
-	POWDifficulty int
+	POWDifficulty uint8
 
 	readTimeoutDuration  time.Duration
 	writeTimeoutDuration time.Duration
@@ -25,7 +25,7 @@ type ProowOfWorkProtectionListener struct {
 // required - Address, optional - Difficulty (Default: 15), ReadTimeoutDuration, WriteTimeoutDuration
 type ListenerOptions struct {
 	Address              string
-	Difficulty           int
+	Difficulty           uint8
 	ReadTimeoutDuration  time.Duration
 	WriteTimeoutDuration time.Duration
 }
@@ -36,8 +36,6 @@ func NewProowOfWorkProtectionListener(opts ListenerOptions) (*ProowOfWorkProtect
 	}
 	if opts.Difficulty == 0 {
 		opts.Difficulty = defaultDifficulty
-	} else if opts.Difficulty > 256 || opts.Difficulty < 1 {
-		return nil, fmt.Errorf("difficulty can be from 1 to 256")
 	}
 
 	tcpListener, err := net.Listen("tcp", opts.Address)

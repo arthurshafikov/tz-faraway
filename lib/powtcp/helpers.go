@@ -72,11 +72,11 @@ func randomString(length int) string {
 	return string(b)
 }
 
-func checkNonceIsValid(difficulty int, data []byte, nonce int) bool {
+func checkNonceIsValid(difficulty uint8, data []byte, nonce int) bool {
 	hash := sha256.Sum256(bytes.Join([][]byte{data, []byte(fmt.Sprintf("%v", nonce))}, []byte{}))
 
 	target := big.NewInt(1)
-	target.Lsh(target, uint(256-difficulty))
+	target.Lsh(target, uint(256-int(difficulty)))
 
 	var intHash big.Int
 	return intHash.SetBytes(hash[:]).Cmp(target) == -1

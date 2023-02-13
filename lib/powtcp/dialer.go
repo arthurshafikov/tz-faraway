@@ -54,7 +54,7 @@ func (cd ConnDialer) Dial(network, addr string) (net.Conn, error) {
 	}
 
 	difficulty, err := strconv.Atoi(string(dataWithDifficulty[1]))
-	if err != nil || difficulty < 1 || difficulty > 256 {
+	if err != nil || difficulty < 1 || difficulty > 255 {
 		return nil, fmt.Errorf("wrong difficulty came from host: %s", string(dataWithDifficulty[1]))
 	}
 
@@ -91,7 +91,7 @@ func (cd *ConnDialer) SetWriteDeadline() error {
 
 func (cd *ConnDialer) findNonce(data []byte, difficulty int) int {
 	for nonce := 0; nonce < math.MaxInt64; nonce++ {
-		if checkNonceIsValid(difficulty, data, nonce) {
+		if checkNonceIsValid(uint8(difficulty), data, nonce) {
 			return nonce
 		}
 	}
