@@ -6,5 +6,5 @@ import (
 )
 
 func Run() {
-	server.RunServer(handler.NewHandler())
+	server.RunServer(handler.NewHandler(), "3333")
 }
