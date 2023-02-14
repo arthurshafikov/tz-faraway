@@ -7,4 +7,4 @@ services:
       dockerfile: ./build/Dockerfile
     restart: on-failure
     ports: 
-      - 3333:3333
+      - ${APP_PORT:-3333}:3333
