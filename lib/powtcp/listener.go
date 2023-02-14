@@ -55,7 +55,9 @@ func (l *ProowOfWorkProtectionListener) Accept() (net.Conn, error) {
 	conn, err := l.tcpListener.Accept()
 	if err != nil {
 		log.Println(fmt.Errorf("ProowOfWorkProtectionListener.Accept() error: %w", err))
-		closeConnection(conn)
+		if conn != nil {
+			closeConnection(conn)
+		}
 
 		return conn, nil
 	}
