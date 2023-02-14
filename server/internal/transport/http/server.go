@@ -3,27 +3,32 @@ package http
 import (
 	"errors"
 	"log"
+	"net"
 	"net/http"
-	"time"
-
-	"github.com/arthurshafikov/tz-faraway/lib/powtcp"
 )
 
-func RunServer(handler http.Handler, port string) {
-	log.Println("Starting the server on port " + port)
+type Server struct {
+	server   *http.Server
+	listener net.Listener
+}
 
-	proowOfWorkProtectionListener, err := powtcp.NewProowOfWorkProtectionListener(powtcp.ListenerOptions{
-		Address:              ":" + port,
-		ReadTimeoutDuration:  time.Second * 5,
-		WriteTimeoutDuration: time.Second * 5,
-	})
-	if err != nil {
-		log.Fatalln(err)
+func NewServer(handler http.Handler, listener net.Listener) *Server {
+	return &Server{
+		server: &http.Server{
+			Handler: handler,
+		},
+		listener: listener,
 	}
+}
 
-	if err := http.Serve(proowOfWorkProtectionListener, handler); err != nil {
+func (s *Server) Serve() error {
+	log.Println("Starting the server on address: " + s.listener.Addr().String())
+
+	if err := s.server.Serve(s.listener); err != nil {
 		if !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalln(err)
+			return err
 		}
 	}
+
+	return nil
 }
