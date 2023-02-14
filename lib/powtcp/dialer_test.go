@@ -22,10 +22,9 @@ func TestNewConnDialer(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		buffer := make([]byte, 10)
-		n, err := connDialer.conn.Read(buffer)
+		res, err := readFromConnection(connDialer.conn, 10)
 		require.NoError(t, err)
-		require.Equal(t, "someString", string(buffer[:n]))
+		require.Equal(t, "someString", string(res))
 
 		goroutineEndChan <- 1
 	}()
@@ -90,11 +89,10 @@ func TestDial(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, len("randomString:8"), n)
 
-	buffer := make([]byte, 20)
-	n, err = conn.Read(buffer)
+	res, err := readFromConnection(conn, 20)
 	require.NoError(t, err)
 
-	nonce, err := strconv.Atoi(string(buffer[:n]))
+	nonce, err := strconv.Atoi(string(res))
 	require.NoError(t, err)
 	require.NotZero(t, nonce)
 
@@ -254,11 +252,10 @@ func TestDialNonOkResult(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, len("randomString:8"), n)
 
-	buffer := make([]byte, 20)
-	n, err = conn.Read(buffer)
+	res, err := readFromConnection(conn, 20)
 	require.NoError(t, err)
 
-	nonce, err := strconv.Atoi(string(buffer[:n]))
+	nonce, err := strconv.Atoi(string(res))
 	require.NoError(t, err)
 	require.NotZero(t, nonce)
 
