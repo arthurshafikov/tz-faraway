@@ -3,7 +3,7 @@ module github.com/arthurshafikov/tz-faraway/client
 go 1.18
 
 require (
-	github.com/arthurshafikov/tz-faraway/lib v0.0.0-20230213101526-5587f6dbf7f3
+	github.com/arthurshafikov/tz-faraway/lib v0.0.0-20230214105618-85a11a5554f7
 	github.com/golang/mock v1.6.0
 	github.com/stretchr/testify v1.8.1
 )

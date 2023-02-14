@@ -4,9 +4,23 @@
 
 # Commands 
 
-Run the client
+## Docker-compose
+
+Run the application
 ```
-make run
+make up
+```
+
+Down the application
+```
+make down
+```
+
+## Tests
+
+Run the unit tests
+```
+make test
 ```
 
 Run linters
@@ -14,7 +28,9 @@ Run linters
 make lint
 ```
 
-Run unit tests
+## App
+
+Run the client without docker
 ```
-make test
+make run
 ```
